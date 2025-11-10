@@ -4,6 +4,7 @@
 #include <utility/imumaths.h>
 
 /* Set the delay between fresh samples */
+/* Default is 100 Hz ( Delay is 10 ms )*/
 uint16_t BNO055_SAMPLERATE_DELAY_MS = 10;
 
 // Check I2C device address and correct line below (by default address is 0x29 or 0x28)
@@ -28,7 +29,7 @@ void setup(void)
 
   delay(1000);
 
-  // CSVヘッダーを出力
+  // Display CSV header
   Serial.println("acceleration.x,acceleration.y,acceleration.z,gyro.x,gyro.y,gyro.z");
 }
 
@@ -38,7 +39,6 @@ void loop(void)
   bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
   bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
 
-  // 取得したデータをCSV形式で出力
   Serial.print(linearAccelData.acceleration.x);
   Serial.print(",");
   Serial.print(linearAccelData.acceleration.y);
