@@ -5,7 +5,6 @@ from datetime import datetime
 
 SERVICE_UUID = "12345678-1234-5678-1234-56789abcdef0"
 CHARACTERISTIC_UUID = "12345678-1234-5678-1234-56789abcdef1"
-
 SAVE_FOLDER = "./"
 
 async def main():
@@ -28,33 +27,34 @@ async def main():
 
     print(f"Connecting to {target.name} ({target.address})...")
     async with BleakClient(target.address) as client:
-        connected = client.is_connected
-        print("Connected:", connected)
+        print("Connected:", client.is_connected)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{SAVE_FOLDER}BNO055Data_{timestamp}.csv"
-        f = open(filename, "w", newline="")
-        writer = csv.writer(f)
-        writer.writerow(["accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z"])
 
-        def notification_handler(sender, data):
-            line = data.decode("utf-8").strip()
-            values = line.split(",")
-            if len(values) == 6:
-                writer.writerow(values)
-                print(values)
+        with open(filename, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["arduino_time_ms", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z"])
 
-        await client.start_notify(CHARACTERISTIC_UUID, notification_handler)
+            def notification_handler(sender, data):
+                try:
+                    line = data.decode("utf-8").strip()
+                    values = line.split(",")
+                    if len(values) == 7:
+                        writer.writerow(values)
+                        print(values)
+                except Exception as e:
+                    print("Error decoding:", e)
 
-        print("Receiving data... Press Ctrl+C to stop.")
-        try:
-            while True:
-                await asyncio.sleep(1)
-        except KeyboardInterrupt:
-            print("\nStopping...")
-        finally:
-            await client.stop_notify(CHARACTERISTIC_UUID)
-            f.close()
+            await client.start_notify(CHARACTERISTIC_UUID, notification_handler)
+            print("Receiving data... Press Ctrl+C to stop.")
+            try:
+                while True:
+                    await asyncio.sleep(1)
+            except KeyboardInterrupt:
+                print("\nStopping...")
+            finally:
+                await client.stop_notify(CHARACTERISTIC_UUID)
 
 if __name__ == "__main__":
     asyncio.run(main())
