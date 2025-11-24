@@ -11,9 +11,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_DATA_SAVED_FOLDER = os.path.join(SCRIPT_DIR, "..", "RawData")
 OUTPUT_SAVED_FOLDER = os.path.join(SCRIPT_DIR, "..", "CreatedDataset")
 OUTPUT_FILE = os.path.join(OUTPUT_SAVED_FOLDER, f"SpeedPredictorDataset_{TimeStamp}.csv")
-MIN_TARGET_SPEED = 3
-MAX_TARGET_SPEED = 10
-CHUNK_INTERVAL_MS = 4000   # MS : millisecond
+MIN_TARGET_SPEED = 4
+MAX_TARGET_SPEED = 6
+CHUNK_INTERVAL_MS = 2000   # MS : millisecond
 # ---------------------------------------------------------- #
 
 # If the folder does not exist, make it.
@@ -151,12 +151,12 @@ def main():
 
     for n in range(MIN_TARGET_SPEED, MAX_TARGET_SPEED + 1):
         for p in range(0,10):
-            Filename = os.path.join(RAW_DATA_SAVED_FOLDER, f"RawData_{n}.{p}.csv")
+            Filename = os.path.join(RAW_DATA_SAVED_FOLDER, f"RawData_{n}_{p}.csv")
             if not os.path.exists(Filename):
-                print(f"Warning: RawData_{n}.{p}.csv not found, skipping.")
+                print(f"Warning: RawData_{n}_{p}.csv not found, skipping.")
                 continue
-
-            Dataset_N = MakeDatasetPerOneFile(Filename, TargetSpeed=n)
+            TargetSpeed = n + p * 0.1
+            Dataset_N = MakeDatasetPerOneFile(Filename, TargetSpeed)
             AllDataSets.append(Dataset_N)
 
     FinalDataFrame = pd.concat(AllDataSets, ignore_index=True)
