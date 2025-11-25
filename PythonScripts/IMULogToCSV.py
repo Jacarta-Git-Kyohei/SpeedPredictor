@@ -9,7 +9,7 @@ SERVICE_UUID = "12345678-1234-5678-1234-56789abcdef0"
 CHARACTERISTIC_UUID = "12345678-1234-5678-1234-56789abcdef1"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_FILE_SAVED_FOLDER = os.path.join(SCRIPT_DIR, "..", "RawData")
-PROGRAM_DELAY_TIME = 20
+PROGRAM_DELAY_TIME = 15
 # ------------------------------- #
 
 async def main():
