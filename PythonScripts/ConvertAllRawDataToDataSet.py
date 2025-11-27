@@ -13,7 +13,9 @@ OUTPUT_SAVED_FOLDER = os.path.join(SCRIPT_DIR, "..", "CreatedDataset")
 OUTPUT_FILE = os.path.join(OUTPUT_SAVED_FOLDER, f"SpeedPredictorDataset_{TimeStamp}.csv")
 MIN_TARGET_SPEED = 3
 MAX_TARGET_SPEED = 10
-CHUNK_INTERVAL_MS = 3000# MS : millisecond
+CHUNK_INTERVAL_MS = 3500 # MS : millisecond
+RAW_DATA_FOR_ENERGY_ESTIMATE_FILE_NAME = "RawData_EnergyTest.csv"
+bCreateDatasetForEnergyEstimation = False
 # ---------------------------------------------------------- #
 
 # If the folder does not exist, make it.
@@ -155,15 +157,21 @@ def main():
 
     AllDataSets = []
 
-    for n in range(MIN_TARGET_SPEED, MAX_TARGET_SPEED + 1):
-        for p in range(0,10):
-            Filename = os.path.join(RAW_DATA_SAVED_FOLDER, f"RawData_{n}_{p}.csv")
-            if not os.path.exists(Filename):
-                print(f"Warning: RawData_{n}_{p}.csv not found, skipping.")
-                continue
-            TargetSpeed = n + p * 0.1
-            Dataset_N = MakeDatasetPerOneFile(Filename, TargetSpeed)
-            AllDataSets.append(Dataset_N)
+    if bCreateDatasetForEnergyEstimation:
+        Filename = os.path.join(RAW_DATA_SAVED_FOLDER, RAW_DATA_FOR_ENERGY_ESTIMATE_FILE_NAME)
+        Dataset_ForEnergyEstimation = MakeDatasetPerOneFile(Filename, 0)
+        AllDataSets.append(Dataset_ForEnergyEstimation)
+
+    else:
+        for n in range(MIN_TARGET_SPEED, MAX_TARGET_SPEED + 1):
+            for p in range(0,10):
+                Filename = os.path.join(RAW_DATA_SAVED_FOLDER, f"RawData_{n}_{p}.csv")
+                if not os.path.exists(Filename):
+                    print(f"Warning: RawData_{n}_{p}.csv not found, skipping.")
+                    continue
+                TargetSpeed = n + p * 0.1
+                Dataset_N = MakeDatasetPerOneFile(Filename, TargetSpeed)
+                AllDataSets.append(Dataset_N)
 
     FinalDataFrame = pd.concat(AllDataSets, ignore_index=True)
     FinalDataFrame.to_csv(OUTPUT_FILE, index=False)

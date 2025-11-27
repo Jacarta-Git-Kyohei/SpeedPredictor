@@ -4,16 +4,11 @@ from scipy.fft import rfft, rfftfreq
 import matplotlib.pyplot as plt
 import os
 
-# ================================
-# ユーザー設定
-# ================================
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_DATA_SAVED_FOLDER = os.path.join(SCRIPT_DIR, "..", "RawData")
-FILENAME = "RawData_4.csv"   # 生データファイル
-CHUNK_SECONDS = 3             # 3秒ごとにFFT
-PLOT_FFT = False              # Trueで各区間のFFT波形を表示
-# ================================
-
+FILENAME = "RawData_8_5.csv"
+CHUNK_SECONDS = 3
+PLOT_FFT = False
 
 def load_data(filename):
     df = pd.read_csv(filename)
@@ -32,62 +27,33 @@ def compute_sampling_rate(time_ms):
     fs = 1.0 / dt_mean
     return fs
 
-
-# ============================================
-# ここが改良版（Hanning＋ゼロパディング）
-# ============================================
 import numpy as np
 from scipy.fft import rfft, rfftfreq
 from scipy.signal import detrend
 
 def get_dominant_frequency(signal, fs, min_freq=0.5, zero_pad_len=4096, remove_trend=True):
-    """
-    改良版：
-    - 平均/トレンド除去（option）
-    - Hann窓
-    - ゼロパディング（長め：zero_pad_len）
-    - min_freq 以上の範囲で最大ピークを選択
-
-    パラメータ:
-    - signal: 1D numpy array (時間信号)
-    - fs: サンプリング周波数 (Hz)
-    - min_freq: 最低探索周波数 (Hz). 期待する周波数帯があるなら適宜上げてください。
-    - zero_pad_len: FFT 長（ゼロパディング後の長さ）。2のべき乗である必要はありませんが、高いほど周波数分解能が上がる。
-    """
     x = np.asarray(signal).astype(float)
     N = len(x)
 
-    # 1) 平均・トレンド除去（推奨）
     if remove_trend:
-        # 直流と線形トレンドを除去
-        x = detrend(x, type='constant')  # 平均を引くだけにしたければ type='constant'
-        # x = detrend(x, type='linear')  # 線形トレンドも除去するならこちら
+        x = detrend(x, type='constant')
 
-    # 2) Hann窓
     window = np.hanning(N)
     x_win = x * window
 
-    # 3) ゼロパディング（ユーザー指定長）
     N_pad = int(zero_pad_len)
     if N_pad < N:
-        # 最低でも元の長さは使う
         N_pad = 2 ** int(np.ceil(np.log2(N)))
     x_pad = np.zeros(N_pad)
     x_pad[:N] = x_win
 
-    # 4) FFT
     Y = rfft(x_pad)
     freqs = rfftfreq(N_pad, 1.0/fs)
-
-    # 5) DCを確実に無視（安全策）
-    # find indices where freq >= min_freq
     idx_min = np.searchsorted(freqs, min_freq, side='left')
     if idx_min <= 0:
         idx_min = 1
 
-    # pick peak in valid range
     magnitude = np.abs(Y)
-    # zero out below min index to avoid selecting low-freq bin
     magnitude[:idx_min] = 0
 
     peak_idx = np.argmax(magnitude)
@@ -127,6 +93,21 @@ def main():
         gyro_domfreq_list.append(gyro_dom)
 
         print(f"区間 {i+1}: accel_DomFreq = {accel_dom:.3f} Hz , gyro_DomFreq = {gyro_dom:.3f} Hz")
+
+        if i == 0:
+            df_accel_fft = pd.DataFrame({
+                "frequency_Hz": xf_a,
+                "magnitude": np.abs(yf_a)
+            })
+            df_accel_fft.to_csv("chunk1_accel_fft.csv", index=False, encoding="utf-8-sig")
+
+            df_gyro_fft = pd.DataFrame({
+                "frequency_Hz": xf_g,
+                "magnitude": np.abs(yf_g)
+            })
+            df_gyro_fft.to_csv("chunk1_gyro_fft.csv", index=False, encoding="utf-8-sig")
+
+            print("チャンク1 FFT を CSV 保存しました → chunk1_accel_fft.csv / chunk1_gyro_fft.csv")
 
         if PLOT_FFT:
             plt.figure(figsize=(10,4))

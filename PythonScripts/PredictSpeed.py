@@ -12,12 +12,18 @@ from xgboost import XGBRegressor
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_SAVED_FOLDER = os.path.join(SCRIPT_DIR, "..", "CreatedDataset")
+SAVED_ERROR_DISTRIBUTION_CSV_FOLDER = os.path.join(SCRIPT_DIR, "..", "ErrorDistributionCSV")
 
 # ------ Customize Parameters ------
-DATASET_FILE_NAME = "SpeedPredictorDataset_1234_5678.csv" # Set Dataset !
+DATASET_FILE_NAME = "SpeedPredictorDataset_Chunk3500.csv"
 bDisplayErrorDistribution_LR = False
 bDisplayErrorDistribution_SVR = False
 bDisplayErrorDistribution_XGB = False
+bDisplayErrorDistribution_Ensemble = False
+bSaveCSVErrorDistribution_LR = False
+bSaveCSVErrorDistribution_SVR = False
+bSaveCSVErrorDistribution_XGB = True
+bSaveCSVErrorDistribution_Ensemble = True
 bDisplayImportanceOfX_LR = False
 bDisplayImportanceOfX_SVR = False
 bDisplayImportanceOfX_XGB = False
@@ -100,6 +106,17 @@ def ComputeAndPlotSHAP(model, X_train, X_test, model_name):
 
     shap.summary_plot(shap_values, X_test, feature_names=feature_names, plot_type="bar")
     shap.summary_plot(shap_values, X_test, feature_names=feature_names)
+
+def SaveResidualsToCSV(y_true, y_pred, model_name):
+    residuals = y_pred - y_true
+    df = pd.DataFrame({
+        "True": y_true,
+        "Predicted": y_pred,
+        "Residual": residuals
+    })
+    csv_path = os.path.join(SAVED_ERROR_DISTRIBUTION_CSV_FOLDER, f"{model_name}_Residuals.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"{model_name} residuals saved to {csv_path}")
 # ------------------------
 
 def main():
@@ -137,6 +154,17 @@ def main():
         PlotErrorDistribution(Y_Test, PredictedVals_SVR, "SVR")
     if bDisplayErrorDistribution_XGB:
         PlotErrorDistribution(Y_Test, PredictedVals_XGB, "XGBoost")
+    if bDisplayErrorDistribution_Ensemble:
+        PlotErrorDistribution(Y_Test, PredictedVals_Ensemble, "Ensemble")
+
+    if bSaveCSVErrorDistribution_LR:
+        SaveResidualsToCSV(Y_Test, PredictedVals_LR, "LinearRegression")
+    if bSaveCSVErrorDistribution_SVR:
+        SaveResidualsToCSV(Y_Test, PredictedVals_SVR, "SVR")
+    if bSaveCSVErrorDistribution_XGB:
+        SaveResidualsToCSV(Y_Test, PredictedVals_XGB, "XGBoost")
+    if bSaveCSVErrorDistribution_Ensemble:
+        SaveResidualsToCSV(Y_Test, PredictedVals_Ensemble, "Ensemble")
 
     # SHAP Importance
     if bDisplayImportanceOfX_LR:
